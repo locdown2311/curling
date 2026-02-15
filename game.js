@@ -158,26 +158,29 @@
                 s.update(this.sweepZones, this.roughZones, currentEnd || 1);
             }
 
-            // Stone-to-stone collisions
+            // Stone-to-stone collisions (skip inactive stones)
             for (let i = 0; i < this.stones.length; i++) {
+                if (!this.stones[i].active) continue;
                 for (let j = i + 1; j < this.stones.length; j++) {
+                    if (!this.stones[j].active) continue;
                     this.resolveCollision(this.stones[i], this.stones[j]);
                 }
             }
 
-            // Remove stones out of bounds
-            this.stones = this.stones.filter(s => {
-                if (!s.active) return false;
+            // Mark out-of-bounds stones as inactive (keep in array for visibility)
+            for (const s of this.stones) {
+                if (!s.active) continue;
                 if (s.x - s.radius < bounds.left - 20 || s.x + s.radius > bounds.right + 20) {
                     s.active = false;
-                    return false;
+                    s.vx = 0;
+                    s.vy = 0;
                 }
                 if (s.y - s.radius < bounds.top - 40 || s.y + s.radius > bounds.bottom + 40) {
                     s.active = false;
-                    return false;
+                    s.vx = 0;
+                    s.vy = 0;
                 }
-                return true;
-            });
+            }
         }
 
         resolveCollision(a, b) {
@@ -234,7 +237,7 @@
                 this.roughZones.push({
                     x: 30 + Math.random() * (SHEET.width - 60),
                     y: SHEET.houseCenterY + 40 + Math.random() * (SHEET.length - SHEET.houseCenterY - SHEET.hackFromEnd - 120),
-                    radius: 25 + Math.random() * 20
+                    radius: 10 + Math.random() * 10
                 });
             }
         }
@@ -383,11 +386,17 @@
         }
 
         drawStone(stone) {
-            if (!stone.active) return;
+            const isGhost = !stone.active;
             const ctx = this.ctx;
             const x = this.sx(stone.x);
             const y = this.sy(stone.y);
             const r = this.ss(stone.radius);
+
+            // Apply ghost effect for inactive stones
+            if (isGhost) {
+                ctx.save();
+                ctx.globalAlpha = 0.3;
+            }
 
             // Shadow
             ctx.beginPath();
@@ -429,6 +438,10 @@
             ctx.arc(x - r * 0.25, y - r * 0.25, r * 0.18, 0, Math.PI * 2);
             ctx.fillStyle = 'rgba(255,255,255,0.4)';
             ctx.fill();
+
+            if (isGhost) {
+                ctx.restore();
+            }
         }
 
         drawAimLine(from, to, power) {
@@ -1136,27 +1149,21 @@
                 }
             }
 
-            // Clean up inactive stones
-            this.physics.stones = this.physics.stones.filter(s => s.active);
+            // Note: inactive stones are kept in array for visual display
         }
 
         checkHogLine() {
-            // The latest thrown stone: if it didn't pass the hog line AND didn't hit anything,
-            // it's removed. For simplicity, remove stones that are past the hog line (closer to hack)
-            // and not in play area.
-            // Actually in curling: a stone must pass the far hog line to be in play.
-            // Since we're throwing toward the house (upward), stones that didn't reach
-            // the hog line should be removed.
+            // Mark stones that didn't pass the hog line as inactive
+            // (kept in array for visual display until end is over)
             const hogY = SHEET.hogLineFromEnd;
 
-            this.physics.stones = this.physics.stones.filter(s => {
-                if (s.y > hogY && !s.isMoving) {
-                    // Stone didn't pass hog line — remove it
+            for (const s of this.physics.stones) {
+                if (s.active && s.y > hogY && !s.isMoving) {
                     s.active = false;
-                    return false;
+                    s.vx = 0;
+                    s.vy = 0;
                 }
-                return s.active;
-            });
+            }
         }
 
         render() {
