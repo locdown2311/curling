@@ -1,6 +1,6 @@
 {
   "name": "curling-multiplayer",
-  "version": "1.7.5",
+  "version": "1.7.6",
   "description": "Multiplayer curling game with WebSocket rooms",
   "main": "server.js",
   "scripts": {

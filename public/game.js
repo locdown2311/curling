@@ -263,7 +263,7 @@
             // Adjust margins for mobile vs desktop
             const isMobile = window.innerWidth <= 768;
             const hMargin = isMobile ? 10 : 80;
-            const vMargin = isMobile ? 10 : 20;
+            const vMargin = isMobile ? 120 : 20;
 
             const availW = window.innerWidth - hMargin;
             const availH = window.innerHeight - headerH - vMargin;
