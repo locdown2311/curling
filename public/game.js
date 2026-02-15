@@ -892,6 +892,9 @@
             this.isMyTurn = false;
             this.teamFlags = [null, null];
 
+            // Per-end score history for live table
+            this.endScores = []; // [{t1: 0, t2: 0}, ...]
+
             this.setupLobby();
             this.setupInput();
             this.loop();
@@ -1073,6 +1076,12 @@
             this.currentEnd = 1;
             this.hammer = 1;
             this.updateScoreboard();
+
+            // Set team names in live score table
+            document.getElementById('liveTeam1Name').textContent = this.team1Name;
+            document.getElementById('liveTeam2Name').textContent = this.team2Name;
+            this.endScores = [];
+            this.updateLiveScoreTable();
 
             // Generate pebble pattern
             this.pebbleSeed = [];
@@ -1332,6 +1341,10 @@
             document.getElementById('modalTotal1').textContent = this.scores[0];
             document.getElementById('modalTotal2').textContent = this.scores[1];
 
+            // Record this end's scores
+            this.endScores.push({ t1: endPoints[0], t2: endPoints[1] });
+            this.updateLiveScoreTable();
+
             this.currentEnd++;
             this.updateScoreboard();
 
@@ -1406,6 +1419,51 @@
             document.getElementById('turnIndicator').title = `Hammer: ${hammerTeam}`;
         }
 
+        updateLiveScoreTable() {
+            // Fill in per-end historical scores
+            for (let e = 1; e <= 8; e++) {
+                const t1Cell = document.getElementById(`e${e}t1`);
+                const t2Cell = document.getElementById(`e${e}t2`);
+                if (e <= this.endScores.length) {
+                    const es = this.endScores[e - 1];
+                    t1Cell.textContent = es.t1;
+                    t2Cell.textContent = es.t2;
+                    t1Cell.className = es.t1 > 0 ? 'end-scored' : '';
+                    t2Cell.className = es.t2 > 0 ? 'end-scored' : '';
+                } else if (e === this.currentEnd) {
+                    t1Cell.textContent = '·';
+                    t2Cell.textContent = '·';
+                    t1Cell.className = 'end-active';
+                    t2Cell.className = 'end-active';
+                } else {
+                    t1Cell.textContent = '-';
+                    t2Cell.textContent = '-';
+                    t1Cell.className = '';
+                    t2Cell.className = '';
+                }
+            }
+
+            // Live scoring from current stone positions
+            const liveResult = calculateScore(this.physics.stones);
+            let liveT1 = 0, liveT2 = 0;
+            if (liveResult.team === 0) liveT1 = liveResult.points;
+            if (liveResult.team === 1) liveT2 = liveResult.points;
+            document.getElementById('liveT1').textContent = liveT1;
+            document.getElementById('liveT2').textContent = liveT2;
+
+            // Totals (accumulated + live)
+            document.getElementById('totalT1').textContent = this.scores[0] + liveT1;
+            document.getElementById('totalT2').textContent = this.scores[1] + liveT2;
+
+            // Highlight current end header
+            for (let e = 1; e <= 8; e++) {
+                const th = document.getElementById(`endH${e}`);
+                if (th) {
+                    th.className = (e === this.currentEnd) ? 'end-active' : '';
+                }
+            }
+        }
+
         // ------ GAME LOOP ------
         loop() {
             if (this.state !== 'lobby') {
@@ -1459,6 +1517,13 @@
                     document.getElementById('sweepHint').classList.remove('visible');
                     this.nextTurn();
                 }
+            }
+
+            // Update live score table (throttled to every ~10 frames)
+            if (!this._liveScoreFrame) this._liveScoreFrame = 0;
+            this._liveScoreFrame++;
+            if (this._liveScoreFrame % 10 === 0) {
+                this.updateLiveScoreTable();
             }
         }
 

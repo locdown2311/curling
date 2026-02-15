@@ -1024,3 +1024,90 @@ body {
 .room-grid::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.2);
 }
+
+/* ===== LIVE SCORE TABLE ===== */
+.live-score-table {
+    padding: 0 12px 6px;
+    background: rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.live-score-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    font-family: 'Inter', sans-serif;
+}
+
+.live-score-table th,
+.live-score-table td {
+    padding: 3px 4px;
+    text-align: center;
+    min-width: 22px;
+}
+
+.live-score-table thead th {
+    color: #64748b;
+    font-weight: 600;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.live-score-table .team-col {
+    text-align: left;
+    min-width: 70px;
+    font-weight: 600;
+    font-size: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 90px;
+}
+
+.live-score-table .team1-row .team-col {
+    color: #fca5a5;
+}
+
+.live-score-table .team2-row .team-col {
+    color: #fde68a;
+}
+
+.live-score-table .team1-row td {
+    color: #e2e8f0;
+}
+
+.live-score-table .team2-row td {
+    color: #e2e8f0;
+}
+
+.live-score-table .live-col {
+    background: rgba(239, 68, 68, 0.08);
+    color: #fbbf24 !important;
+    font-weight: 700;
+    position: relative;
+    min-width: 28px;
+}
+
+.live-score-table thead .live-col {
+    font-size: 12px;
+}
+
+.live-score-table .total-col {
+    font-weight: 800;
+    color: #f0f9ff !important;
+    background: rgba(255, 255, 255, 0.04);
+    min-width: 34px;
+}
+
+.live-score-table .end-active {
+    background: rgba(56, 189, 248, 0.1);
+    color: var(--ice-300) !important;
+    font-weight: 700;
+}
+
+.live-score-table .end-scored {
+    color: #22c55e !important;
+    font-weight: 700;
+}
