@@ -16,6 +16,7 @@ const io = new Server(server, {
 
 const PORT = process.env.PORT || 3000;
 const TOTAL_LOBBIES = 50;
+const GAME_VERSION = require('./package.json').version;
 
 // ============================================================
 // LOBBY MANAGER
@@ -65,6 +66,15 @@ io.on('connection', (socket) => {
         nickname = (name || 'Jogador').trim().substring(0, 20);
         console.log(`[~] ${socket.id} set nickname: ${nickname}`);
     });
+
+    // Send server info (version + online count)
+    socket.emit('server-info', {
+        version: GAME_VERSION,
+        onlineCount: io.engine.clientsCount
+    });
+
+    // Broadcast updated online count to all
+    io.emit('online-count', io.engine.clientsCount);
 
     // --- Get Lobby List ---
     socket.on('get-lobbies', (callback) => {
@@ -177,6 +187,8 @@ io.on('connection', (socket) => {
         if (lobby) {
             leaveLobby(socket, lobby);
         }
+        // Broadcast updated online count
+        io.emit('online-count', io.engine.clientsCount);
     });
 });
 

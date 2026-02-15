@@ -718,6 +718,19 @@
             this.socket.on('game-over-result', (result) => {
                 if (this.onGameOverResult) this.onGameOverResult(result);
             });
+
+            // Server info (version + online count)
+            this.socket.on('server-info', (info) => {
+                const badge = document.getElementById('versionBadge');
+                if (badge) badge.textContent = `v${info.version}`;
+                const count = document.getElementById('onlineCount');
+                if (count) count.textContent = `${info.onlineCount} online`;
+            });
+
+            this.socket.on('online-count', (n) => {
+                const count = document.getElementById('onlineCount');
+                if (count) count.textContent = `${n} online`;
+            });
         }
 
         setNickname(name) {
