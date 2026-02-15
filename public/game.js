@@ -377,6 +377,34 @@
             // Button (center)
             this.drawRing(houseX, houseY, SHEET.buttonRadius, '#1e3a5f', '#1e3a5f');
 
+            // Score zone labels around rings
+            const zones = [
+                { radius: SHEET.houseRadius, label: '1', color: 'rgba(59, 130, 246, 0.9)' },
+                { radius: SHEET.middleRing, label: '2', color: 'rgba(100, 116, 139, 0.9)' },
+                { radius: SHEET.innerRing, label: '3', color: 'rgba(239, 68, 68, 0.9)' },
+                { radius: SHEET.buttonRadius + 4, label: '4', color: 'rgba(255, 255, 255, 0.95)' }
+            ];
+
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            for (const z of zones) {
+                const lx = houseX + z.radius * 0.7;
+                const ly = houseY - z.radius * 0.7;
+                const fs = this.ss(z.radius < 15 ? 7 : 9);
+                const pr = this.ss(z.radius < 15 ? 5 : 6);
+
+                // Background pill
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                ctx.beginPath();
+                ctx.arc(this.sx(lx), this.sy(ly), pr, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Number
+                ctx.fillStyle = z.color;
+                ctx.font = `bold ${fs}px Inter, sans-serif`;
+                ctx.fillText(z.label, this.sx(lx), this.sy(ly));
+            }
+
             // Hack (starting position)
             const hackY = h - SHEET.hackFromEnd;
             ctx.fillStyle = '#475569';
@@ -1309,10 +1337,10 @@
                 this.currentTeam = otherTeam;
             }
 
-            this.state = 'aiming';
-            this.aimStartTime = Date.now();
-            this.sweepEnergy = MAX_SWEEP_ENERGY;
-            this.physics.clearSweepZones();
+            // Enter cooldown before allowing next aim
+            this.state = 'cooldown';
+            this.cooldownStart = Date.now();
+            this.cooldownDuration = 2000; // 2 seconds
             this.isMyTurn = (this.currentTeam === this.net.myTeam);
             this.updateUI();
         }
@@ -1491,6 +1519,17 @@
                     document.getElementById('powerMeter').classList.remove('visible');
                     this.nextTurn();
                     return;
+                }
+            }
+
+            // Cooldown timer between turns
+            if (this.state === 'cooldown') {
+                const elapsed = Date.now() - this.cooldownStart;
+                if (elapsed >= this.cooldownDuration) {
+                    this.state = 'aiming';
+                    this.aimStartTime = Date.now();
+                    this.sweepEnergy = MAX_SWEEP_ENERGY;
+                    this.physics.clearSweepZones();
                 }
             }
 
@@ -1696,6 +1735,50 @@
                 ctx.font = `${r.ss(7)}px Inter, sans-serif`;
                 ctx.textAlign = 'left';
                 ctx.fillText(`🧹 ${Math.round(energyRatio * 100)}%`, barX + r.ss(2), barY - r.ss(2));
+            }
+
+            // Draw cooldown clock between turns
+            if (this.state === 'cooldown') {
+                const elapsed = Date.now() - this.cooldownStart;
+                const remaining = Math.max(0, 1 - elapsed / this.cooldownDuration);
+                const secsLeft = Math.ceil((this.cooldownDuration - elapsed) / 1000);
+
+                const cx = r.sx(SHEET.width / 2);
+                const cy = r.sy(SHEET.length * 0.55);
+                const clockR = r.ss(28);
+
+                // Dark overlay behind clock
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+                ctx.beginPath();
+                ctx.arc(cx, cy, clockR + r.ss(8), 0, Math.PI * 2);
+                ctx.fill();
+
+                // Clock background ring
+                ctx.beginPath();
+                ctx.arc(cx, cy, clockR, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+                ctx.lineWidth = r.ss(4);
+                ctx.stroke();
+
+                // Clock arc (shrinking)
+                const arcColor = this.currentTeam === 0 ? '#ef4444' : '#eab308';
+                ctx.beginPath();
+                ctx.arc(cx, cy, clockR, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * remaining), false);
+                ctx.strokeStyle = arcColor;
+                ctx.lineWidth = r.ss(4);
+                ctx.stroke();
+
+                // Countdown number
+                ctx.fillStyle = '#ffffff';
+                ctx.font = `bold ${r.ss(18)}px Inter, sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(secsLeft > 0 ? secsLeft : '⏳', cx, cy);
+
+                // "Próximo turno" label below
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.font = `${r.ss(7)}px Inter, sans-serif`;
+                ctx.fillText('Próximo turno', cx, cy + clockR + r.ss(12));
             }
         }
     }

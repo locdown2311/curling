@@ -377,6 +377,34 @@
             // Button (center)
             this.drawRing(houseX, houseY, SHEET.buttonRadius, '#1e3a5f', '#1e3a5f');
 
+            // Score zone labels around rings
+            const zones = [
+                { radius: SHEET.houseRadius, label: '1', color: 'rgba(59, 130, 246, 0.9)' },
+                { radius: SHEET.middleRing, label: '2', color: 'rgba(100, 116, 139, 0.9)' },
+                { radius: SHEET.innerRing, label: '3', color: 'rgba(239, 68, 68, 0.9)' },
+                { radius: SHEET.buttonRadius + 4, label: '4', color: 'rgba(255, 255, 255, 0.95)' }
+            ];
+
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            for (const z of zones) {
+                const lx = houseX + z.radius * 0.7;
+                const ly = houseY - z.radius * 0.7;
+                const fs = this.ss(z.radius < 15 ? 7 : 9);
+                const pr = this.ss(z.radius < 15 ? 5 : 6);
+
+                // Background pill
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                ctx.beginPath();
+                ctx.arc(this.sx(lx), this.sy(ly), pr, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Number
+                ctx.fillStyle = z.color;
+                ctx.font = `bold ${fs}px Inter, sans-serif`;
+                ctx.fillText(z.label, this.sx(lx), this.sy(ly));
+            }
+
             // Hack (starting position)
             const hackY = h - SHEET.hackFromEnd;
             ctx.fillStyle = '#475569';
