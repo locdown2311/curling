@@ -1086,19 +1086,88 @@ body {
     }
 
     .game-header {
-        padding: 8px 12px;
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        /* Full height */
+        width: 80px;
+        flex-direction: column;
+        justify-content: center;
+        padding: 20px 0;
+        gap: 16px;
+        background: linear-gradient(to left, rgba(0, 0, 0, 0.4), transparent);
+        pointer-events: none;
+        z-index: 15;
     }
 
+    .game-header>* {
+        pointer-events: auto;
+    }
 
+    .team-score {
+        min-width: auto;
+        flex-direction: column-reverse;
+        /* Score above label */
+        gap: 4px;
+    }
+
+    .team-score .score {
+        font-size: 32px;
+    }
+
+    .team-name {
+        display: none;
+    }
+
+    .game-info {
+        flex-direction: column;
+        gap: 12px;
+        order: 0;
+    }
+
+    .end-info {
+        flex-direction: column;
+        gap: 2px;
+        font-size: 10px;
+        text-align: center;
+    }
+
+    .end-number {
+        font-size: 16px;
+    }
+
+    .stones-left {
+        display: none;
+    }
+
+    .turn-indicator {
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .turn-dot {
+        width: 14px;
+        height: 14px;
+    }
+
+    #turnText {
+        display: none;
+    }
+
+    .connection-status {
+        display: none;
+    }
+
+    .hammer-indicator {
+        font-size: 20px;
+        margin: 4px 0;
+    }
 
     .modal-card {
         min-width: auto;
         margin: 16px;
         padding: 28px 24px;
-    }
-
-    .hammer-indicator {
-        font-size: 20px;
     }
 
     .room-grid {
@@ -1114,7 +1183,8 @@ body {
 
     /* ===== MOBILE VERTICAL FORCE PANEL ===== */
     .force-panel {
-        top: 60px;
+        top: 0;
+        /* Full height, no top header */
         /* Below header */
         bottom: 0;
         left: 0;

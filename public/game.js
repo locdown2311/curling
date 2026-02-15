@@ -262,13 +262,16 @@
             const headerH = header ? header.offsetHeight : 60;
             // Adjust margins for mobile vs desktop
             const isMobile = window.innerWidth <= 768;
-            // Mobile: Side panel on left (width ~90px), so add hMargin
-            const hMargin = isMobile ? 100 : 80;
-            // Mobile: Reset vMargin to normal since panel is on side now (safe area handled by CSS)
-            const vMargin = isMobile ? 30 : 20;
+            // Mobile: Side panel on left (~90px) + Scoreboard on right (~80px) = 170px -> Use 200 for safety centering
+            const hMargin = isMobile ? 200 : 80;
+            // Mobile: Reset vMargin to minimal, as header is now on side
+            const vMargin = isMobile ? 20 : 20;
+
+            // On mobile, header height is effectively 0 for the canvas area calculation
+            const effectiveHeaderH = isMobile ? 0 : headerH;
 
             const availW = window.innerWidth - hMargin;
-            const availH = window.innerHeight - headerH - vMargin;
+            const availH = window.innerHeight - effectiveHeaderH - vMargin;
 
             // Scale sheet to fit
             const padding = isMobile ? 5 : CANVAS_PADDING;
