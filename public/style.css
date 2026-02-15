@@ -229,6 +229,67 @@ body {
     transform: translateY(0);
 }
 
+.btn-start:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* ===== FLAG PICKER ===== */
+.flag-picker {
+    margin-bottom: 20px;
+}
+
+.flag-picker h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ice-200);
+    margin-bottom: 12px;
+}
+
+.flag-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+}
+
+.flag-btn {
+    font-size: 26px;
+    padding: 8px 4px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 2px solid transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+    line-height: 1;
+}
+
+.flag-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: scale(1.1);
+}
+
+.flag-btn.selected {
+    background: rgba(56, 189, 248, 0.15);
+    border-color: var(--ice-400);
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+    transform: scale(1.15);
+}
+
+.flag-hint {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 8px;
+    text-align: center;
+    transition: var(--transition);
+}
+
+.flag-hint.selected {
+    color: var(--ice-400);
+}
+
 .lobby-footer {
     text-align: center;
 }

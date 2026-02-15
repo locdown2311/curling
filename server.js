@@ -60,11 +60,17 @@ io.on('connection', (socket) => {
     console.log(`[+] Player connected: ${socket.id}`);
 
     let nickname = 'Jogador';
+    let flag = '🏳️';
 
     // --- Set Nickname ---
-    socket.on('set-nickname', (name) => {
-        nickname = (name || 'Jogador').trim().substring(0, 20);
-        console.log(`[~] ${socket.id} set nickname: ${nickname}`);
+    socket.on('set-nickname', (data) => {
+        if (typeof data === 'object' && data !== null) {
+            nickname = (data.name || 'Jogador').trim().substring(0, 20);
+            flag = data.flag || '🏳️';
+        } else {
+            nickname = (data || 'Jogador').trim().substring(0, 20);
+        }
+        console.log(`[~] ${socket.id} set nickname: ${nickname} ${flag}`);
     });
 
     // Send server info (version + online count)
@@ -102,7 +108,7 @@ io.on('connection', (socket) => {
 
         // Assign team: first player = 0 (red), second = 1 (yellow)
         const team = lobby.players.length === 0 ? 0 : 1;
-        lobby.players.push({ id: socket.id, nickname, team });
+        lobby.players.push({ id: socket.id, nickname, flag, team });
 
         socket.join(`lobby-${lobbyId}`);
         console.log(`[>] ${nickname} joined lobby ${lobbyId} as team ${team}`);
@@ -110,7 +116,7 @@ io.on('connection', (socket) => {
         // Notify all in lobby
         io.to(`lobby-${lobbyId}`).emit('lobby-update', {
             id: lobby.id,
-            players: lobby.players.map(p => ({ nickname: p.nickname, team: p.team })),
+            players: lobby.players.map(p => ({ nickname: p.nickname, flag: p.flag, team: p.team })),
             status: lobby.status
         });
 
@@ -123,7 +129,7 @@ io.on('connection', (socket) => {
         if (lobby.players.length === 2) {
             lobby.status = 'playing';
             io.to(`lobby-${lobbyId}`).emit('game-start', {
-                players: lobby.players.map(p => ({ nickname: p.nickname, team: p.team }))
+                players: lobby.players.map(p => ({ nickname: p.nickname, flag: p.flag, team: p.team }))
             });
             io.emit('lobbies-update', getLobbyList());
             console.log(`[!] Game started in lobby ${lobbyId}`);

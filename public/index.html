@@ -29,13 +29,39 @@
                     <input type="text" id="nicknameInput" placeholder="Digite seu apelido..." maxlength="20"
                         autocomplete="off">
                 </div>
-                <button class="btn-start" id="btnSetNickname">
+                <div class="flag-picker">
+                    <h3>Escolha seu País</h3>
+                    <div class="flag-grid" id="flagGrid">
+                        <button class="flag-btn" data-flag="🇧🇷" title="Brasil">🇧🇷</button>
+                        <button class="flag-btn" data-flag="🇦🇷" title="Argentina">🇦🇷</button>
+                        <button class="flag-btn" data-flag="🇺🇸" title="EUA">🇺🇸</button>
+                        <button class="flag-btn" data-flag="🇨🇦" title="Canadá">🇨🇦</button>
+                        <button class="flag-btn" data-flag="🇬🇧" title="Reino Unido">🇬🇧</button>
+                        <button class="flag-btn" data-flag="🇫🇷" title="França">🇫🇷</button>
+                        <button class="flag-btn" data-flag="🇩🇪" title="Alemanha">🇩🇪</button>
+                        <button class="flag-btn" data-flag="🇮🇹" title="Itália">🇮🇹</button>
+                        <button class="flag-btn" data-flag="🇪🇸" title="Espanha">🇪🇸</button>
+                        <button class="flag-btn" data-flag="🇵🇹" title="Portugal">🇵🇹</button>
+                        <button class="flag-btn" data-flag="🇯🇵" title="Japão">🇯🇵</button>
+                        <button class="flag-btn" data-flag="🇰🇷" title="Coreia do Sul">🇰🇷</button>
+                        <button class="flag-btn" data-flag="🇨🇳" title="China">🇨🇳</button>
+                        <button class="flag-btn" data-flag="🇷🇺" title="Rússia">🇷🇺</button>
+                        <button class="flag-btn" data-flag="🇲🇽" title="México">🇲🇽</button>
+                        <button class="flag-btn" data-flag="🇸🇪" title="Suécia">🇸🇪</button>
+                        <button class="flag-btn" data-flag="🇳🇴" title="Noruega">🇳🇴</button>
+                        <button class="flag-btn" data-flag="🇨🇭" title="Suíça">🇨🇭</button>
+                        <button class="flag-btn" data-flag="🇦🇺" title="Austrália">🇦🇺</button>
+                        <button class="flag-btn" data-flag="🇨🇴" title="Colômbia">🇨🇴</button>
+                    </div>
+                    <p class="flag-hint" id="flagHint">Selecione uma bandeira</p>
+                </div>
+                <button class="btn-start" id="btnSetNickname" disabled>
                     <span>Entrar nas Salas</span>
                     <span>→</span>
                 </button>
             </div>
             <div class="lobby-footer">
-                <p>Escolha um apelido para jogar online</p>
+                <p>Escolha um apelido e país para jogar online</p>
             </div>
         </div>
     </div>

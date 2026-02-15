@@ -37,7 +37,8 @@
         middleRing: 60,
         hogLineFromEnd: 200,
         hackFromEnd: 30,
-        houseCenterY: 120  // distance from top of sheet to center of house
+        houseCenterY: 120,  // distance from top of sheet to center of house
+        centerLineY: 450    // middle line — stones must reach this to stay active
     };
 
     // ============================================================
@@ -346,6 +347,22 @@
             ctx.font = `${this.ss(9)}px Inter, sans-serif`;
             ctx.textAlign = 'left';
             ctx.fillText('HOG LINE', this.sx(6), this.sy(SHEET.hogLineFromEnd) - this.ss(5));
+
+            // Center line (must-reach line)
+            ctx.strokeStyle = 'rgba(234, 179, 8, 0.6)';
+            ctx.lineWidth = this.ss(2);
+            ctx.setLineDash([this.ss(10), this.ss(6)]);
+            ctx.beginPath();
+            ctx.moveTo(this.sx(0), this.sy(SHEET.centerLineY));
+            ctx.lineTo(this.sx(w), this.sy(SHEET.centerLineY));
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Center line label
+            ctx.fillStyle = 'rgba(234, 179, 8, 0.7)';
+            ctx.font = `${this.ss(8)}px Inter, sans-serif`;
+            ctx.textAlign = 'left';
+            ctx.fillText('LINHA CENTRAL', this.sx(6), this.sy(SHEET.centerLineY) - this.ss(5));
 
             // House (concentric rings) - drawn from largest to smallest
             const houseX = w / 2;
@@ -1153,12 +1170,12 @@
         }
 
         checkHogLine() {
-            // Mark stones that didn't pass the hog line as inactive
+            // Mark stones that didn't pass the center line as inactive
             // (kept in array for visual display until end is over)
-            const hogY = SHEET.hogLineFromEnd;
+            const cutoffY = SHEET.centerLineY;
 
             for (const s of this.physics.stones) {
-                if (s.active && s.y > hogY && !s.isMoving) {
+                if (s.active && s.y > cutoffY && !s.isMoving) {
                     s.active = false;
                     s.vx = 0;
                     s.vy = 0;

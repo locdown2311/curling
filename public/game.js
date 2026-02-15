@@ -37,7 +37,8 @@
         middleRing: 60,
         hogLineFromEnd: 200,
         hackFromEnd: 30,
-        houseCenterY: 120  // distance from top of sheet to center of house
+        houseCenterY: 120,  // distance from top of sheet to center of house
+        centerLineY: 450    // middle line — stones must reach this to stay active
     };
 
     // ============================================================
@@ -347,6 +348,22 @@
             ctx.textAlign = 'left';
             ctx.fillText('HOG LINE', this.sx(6), this.sy(SHEET.hogLineFromEnd) - this.ss(5));
 
+            // Center line (must-reach line)
+            ctx.strokeStyle = 'rgba(234, 179, 8, 0.6)';
+            ctx.lineWidth = this.ss(2);
+            ctx.setLineDash([this.ss(10), this.ss(6)]);
+            ctx.beginPath();
+            ctx.moveTo(this.sx(0), this.sy(SHEET.centerLineY));
+            ctx.lineTo(this.sx(w), this.sy(SHEET.centerLineY));
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Center line label
+            ctx.fillStyle = 'rgba(234, 179, 8, 0.7)';
+            ctx.font = `${this.ss(8)}px Inter, sans-serif`;
+            ctx.textAlign = 'left';
+            ctx.fillText('LINHA CENTRAL', this.sx(6), this.sy(SHEET.centerLineY) - this.ss(5));
+
             // House (concentric rings) - drawn from largest to smallest
             const houseX = w / 2;
             const houseY = SHEET.houseCenterY;
@@ -385,7 +402,7 @@
             ctx.stroke();
         }
 
-        drawStone(stone) {
+        drawStone(stone, flag) {
             const isGhost = !stone.active;
             const ctx = this.ctx;
             const x = this.sx(stone.x);
@@ -404,7 +421,7 @@
             ctx.fillStyle = 'rgba(0,0,0,0.2)';
             ctx.fill();
 
-            // Stone body
+            // Stone body - subtle team tint
             const stoneGrad = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, r * 0.1, x, y, r);
             if (stone.team === 0) {
                 stoneGrad.addColorStop(0, '#fca5a5');
@@ -426,12 +443,20 @@
             ctx.lineWidth = this.ss(1.5);
             ctx.stroke();
 
-            // Handle (top highlight)
-            ctx.beginPath();
-            ctx.arc(x, y, r * 0.45, 0, Math.PI * 2);
-            ctx.strokeStyle = stone.team === 0 ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.5)';
-            ctx.lineWidth = this.ss(1.5);
-            ctx.stroke();
+            // Flag emoji on stone
+            if (flag) {
+                ctx.font = `${r * 1.1}px sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(flag, x, y + r * 0.08);
+            } else {
+                // Fallback: handle highlight ring if no flag
+                ctx.beginPath();
+                ctx.arc(x, y, r * 0.45, 0, Math.PI * 2);
+                ctx.strokeStyle = stone.team === 0 ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.5)';
+                ctx.lineWidth = this.ss(1.5);
+                ctx.stroke();
+            }
 
             // Shine
             ctx.beginPath();
@@ -733,9 +758,10 @@
             });
         }
 
-        setNickname(name) {
+        setNickname(name, flag) {
             this.nickname = name;
-            this.socket.emit('set-nickname', name);
+            this.flag = flag;
+            this.socket.emit('set-nickname', { name, flag });
         }
 
         getLobbies(callback) {
@@ -864,6 +890,7 @@
 
             // Multiplayer
             this.isMyTurn = false;
+            this.teamFlags = [null, null];
 
             this.setupLobby();
             this.setupInput();
@@ -875,11 +902,29 @@
             // Connect to server
             this.net.connect();
 
+            // Flag selection
+            let selectedFlag = null;
+            const flagGrid = document.getElementById('flagGrid');
+            const flagHint = document.getElementById('flagHint');
+            const btnSetNickname = document.getElementById('btnSetNickname');
+
+            flagGrid.addEventListener('click', (e) => {
+                const btn = e.target.closest('.flag-btn');
+                if (!btn) return;
+                flagGrid.querySelectorAll('.flag-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                selectedFlag = btn.dataset.flag;
+                flagHint.textContent = btn.title;
+                flagHint.classList.add('selected');
+                btnSetNickname.disabled = false;
+            });
+
             // Nickname screen
-            document.getElementById('btnSetNickname').addEventListener('click', () => {
+            btnSetNickname.addEventListener('click', () => {
+                if (!selectedFlag) return;
                 const name = document.getElementById('nicknameInput').value.trim() || 'Jogador';
-                this.net.setNickname(name);
-                document.getElementById('myNickname').textContent = name;
+                this.net.setNickname(name, selectedFlag);
+                document.getElementById('myNickname').textContent = `${selectedFlag} ${name}`;
 
                 this.nicknameScreen.classList.remove('active');
                 this.roomBrowser.classList.add('active');
@@ -903,6 +948,7 @@
             this.net.onGameStart = (data) => {
                 this.team1Name = data.players[0].nickname;
                 this.team2Name = data.players[1].nickname;
+                this.teamFlags = [data.players[0].flag || '🏳️', data.players[1].flag || '🏳️'];
                 this.startGame();
             };
 
@@ -1430,12 +1476,12 @@
         }
 
         checkHogLine() {
-            // Mark stones that didn't pass the hog line as inactive
+            // Mark stones that didn't pass the center line as inactive
             // (kept in array for visual display until end is over)
-            const hogY = SHEET.hogLineFromEnd;
+            const cutoffY = SHEET.centerLineY;
 
             for (const s of this.physics.stones) {
-                if (s.active && s.y > hogY && !s.isMoving) {
+                if (s.active && s.y > cutoffY && !s.isMoving) {
                     s.active = false;
                     s.vx = 0;
                     s.vy = 0;
@@ -1477,7 +1523,8 @@
 
             // Draw all stones
             for (const s of this.physics.stones) {
-                r.drawStone(s);
+                const flag = this.teamFlags ? this.teamFlags[s.team] : null;
+                r.drawStone(s, flag);
             }
 
             // Draw broom cursor during waiting state
