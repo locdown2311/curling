@@ -271,15 +271,16 @@
             const availH = window.innerHeight - headerH - vMargin;
 
             // Scale sheet to fit
-            const scaleW = availW / (SHEET.width + CANVAS_PADDING * 2);
-            const scaleH = availH / (SHEET.length + CANVAS_PADDING * 2);
+            const padding = isMobile ? 5 : CANVAS_PADDING;
+            const scaleW = availW / (SHEET.width + padding * 2);
+            const scaleH = availH / (SHEET.length + padding * 2);
             this.scale = Math.min(scaleW, scaleH);
 
-            this.canvas.width = (SHEET.width + CANVAS_PADDING * 2) * this.scale;
-            this.canvas.height = (SHEET.length + CANVAS_PADDING * 2) * this.scale;
+            this.canvas.width = (SHEET.width + padding * 2) * this.scale;
+            this.canvas.height = (SHEET.length + padding * 2) * this.scale;
 
-            this.offsetX = CANVAS_PADDING * this.scale;
-            this.offsetY = CANVAS_PADDING * this.scale;
+            this.offsetX = padding * this.scale;
+            this.offsetY = padding * this.scale;
         }
 
         sx(x) { return this.offsetX + x * this.scale; }
