@@ -1001,6 +1001,10 @@
                     this.aimTarget = action.aimTarget;
                     this.power = action.power;
                     this.currentTeam = action.team;
+                    // Sync rough zones from launcher if provided
+                    if (action.roughZones) {
+                        this.physics.roughZones = action.roughZones;
+                    }
                     this.launchStoneFromAction(action);
                     break;
                 case 'sweep':
@@ -1012,6 +1016,10 @@
                     // Opponent's timer ran out — skip their stone
                     this.stonesThrown[action.team]++;
                     this.nextTurn();
+                    break;
+                case 'sync-stones':
+                    // Authoritative stone positions from active player
+                    this.applyStoneSyncFromRemote(action.stones);
                     break;
                 case 'end-end':
                     // Sync end results
@@ -1042,6 +1050,18 @@
             if (state.currentEnd) this.currentEnd = state.currentEnd;
             if (state.hammer !== undefined) this.hammer = state.hammer;
             this.updateScoreboard();
+        }
+
+        applyStoneSyncFromRemote(stonesData) {
+            // Replace all local stone positions with authoritative data from launcher
+            // Rebuild the stones array to match the launcher's state exactly
+            this.physics.stones = stonesData.map(sd => {
+                const s = new Stone(sd.team, sd.x, sd.y);
+                s.vx = sd.vx;
+                s.vy = sd.vy;
+                s.active = sd.active;
+                return s;
+            });
         }
 
         startGame() {
@@ -1227,15 +1247,27 @@
             stone.vx = Math.cos(finalAngle) * speed;
             stone.vy = Math.sin(finalAngle) * speed;
 
-            // Send launch action to opponent
-            this.net.sendAction({
+            // Build launch action
+            const launchAction = {
                 type: 'launch',
                 team: this.currentTeam,
                 vx: stone.vx,
                 vy: stone.vy,
                 power: this.power,
                 aimTarget: this.aimTarget
-            });
+            };
+
+            // Include rough zones on first launch of the end so both clients match
+            const totalThrown = this.stonesThrown[0] + this.stonesThrown[1];
+            if (totalThrown === 0) {
+                launchAction.roughZones = this.physics.roughZones;
+            }
+
+            // Send launch action to opponent
+            this.net.sendAction(launchAction);
+
+            // Mark as launch owner so we send sync after physics settle
+            this.isLaunchOwner = true;
 
             // Save pre-throw positions for Free Guard Zone enforcement
             this.preThrowPositions = this.physics.stones.map(s => ({
@@ -1408,6 +1440,15 @@
                 this.physics.update(this.renderer.sheetBounds, this.currentEnd);
 
                 if (!this.physics.anyMoving) {
+                    // If we launched this stone, send authoritative positions to opponent
+                    if (this.isLaunchOwner) {
+                        this.isLaunchOwner = false;
+                        const stoneData = this.physics.stones.map(s => ({
+                            team: s.team, x: s.x, y: s.y, vx: s.vx, vy: s.vy, active: s.active
+                        }));
+                        this.net.sendAction({ type: 'sync-stones', stones: stoneData });
+                    }
+
                     // Free Guard Zone enforcement
                     this.enforceFreeGuardZone();
 
