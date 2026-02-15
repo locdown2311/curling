@@ -992,6 +992,24 @@
                 this.net.getLobbies((lobbies) => this.net.renderLobbies(lobbies));
             });
 
+            // Fullscreen toggle
+            const btnFullscreen = document.getElementById('btnFullscreen');
+            if (btnFullscreen) {
+                btnFullscreen.addEventListener('click', () => {
+                    if (!document.fullscreenElement) {
+                        document.documentElement.requestFullscreen().catch(err => {
+                            console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                        });
+                        btnFullscreen.innerHTML = '⛶ Sair da Tela Cheia';
+                    } else {
+                        if (document.exitFullscreen) {
+                            document.exitFullscreen();
+                            btnFullscreen.innerHTML = '⛶ Maximizar Tela (App)';
+                        }
+                    }
+                });
+            }
+
             document.getElementById('nicknameInput').addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') document.getElementById('btnSetNickname').click();
             });
