@@ -262,8 +262,10 @@
             const headerH = header ? header.offsetHeight : 60;
             // Adjust margins for mobile vs desktop
             const isMobile = window.innerWidth <= 768;
-            const hMargin = isMobile ? 10 : 80;
-            const vMargin = isMobile ? 120 : 20;
+            // Mobile: Side panel on left (width ~90px), so add hMargin
+            const hMargin = isMobile ? 100 : 80;
+            // Mobile: Reset vMargin to normal since panel is on side now (safe area handled by CSS)
+            const vMargin = isMobile ? 30 : 20;
 
             const availW = window.innerWidth - hMargin;
             const availH = window.innerHeight - headerH - vMargin;
@@ -1291,7 +1293,21 @@
                 const rect = this.forceSliderTrack.getBoundingClientRect();
                 const touch = e.touches && e.touches.length > 0 ? e.touches[0] : (e.changedTouches && e.changedTouches.length > 0 ? e.changedTouches[0] : null);
                 const clientX = touch ? touch.clientX : e.clientX;
-                return clamp((clientX - rect.left) / rect.width, 0, 1);
+                const clientY = touch ? touch.clientY : e.clientY;
+
+                // Detect if vertical (height > width)
+                const isVertical = rect.height > rect.width;
+
+                if (isVertical) {
+                    // Vertical: 0 at bottom, 1 at top
+                    // normalized pos from top
+                    const relativeY = (clientY - rect.top);
+                    // inverse because Y grows down
+                    return clamp(1 - (relativeY / rect.height), 0, 1);
+                } else {
+                    // Horizontal: 0 at left, 1 at right
+                    return clamp((clientX - rect.left) / rect.width, 0, 1);
+                }
             };
 
             const onSliderDown = (e) => {
@@ -1353,8 +1369,23 @@
 
         updateForceSlider(ratio) {
             const pct = Math.round(ratio * 100);
-            this.forceSliderFill.style.width = `${pct}%`;
-            this.forceSliderThumb.style.left = `${pct}%`;
+            const rect = this.forceSliderTrack.getBoundingClientRect();
+            const isVertical = rect.height > rect.width;
+
+            if (isVertical) {
+                this.forceSliderFill.style.width = '100%';
+                this.forceSliderFill.style.height = `${pct}%`;
+                // For vertical, thumb follows bottom position
+                this.forceSliderThumb.style.left = '50%';
+                this.forceSliderThumb.style.bottom = `${pct}%`;
+                this.forceSliderThumb.style.top = 'auto'; // Clear top
+            } else {
+                this.forceSliderFill.style.height = '100%';
+                this.forceSliderFill.style.width = `${pct}%`;
+                this.forceSliderThumb.style.left = `${pct}%`;
+                this.forceSliderThumb.style.bottom = 'auto'; // Clear bottom
+                this.forceSliderThumb.style.top = '50%';
+            }
             this.forceValueEl.textContent = `${pct}%`;
         }
 
