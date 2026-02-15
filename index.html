@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Curling - Jogo de Navegador</title>
+    <meta name="description"
+        content="Jogo de curling no navegador com física realista, fricção no gelo e regras oficiais.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- LOBBY SCREEN -->
+    <div id="lobby" class="screen active">
+        <div class="lobby-bg"></div>
+        <div class="lobby-container">
+            <div class="lobby-header">
+                <div class="logo-icon">🥌</div>
+                <h1>Curling</h1>
+                <p class="subtitle">Jogo de Navegador</p>
+            </div>
+            <div class="lobby-card">
+                <h2>Configurar Partida</h2>
+                <div class="form-group">
+                    <label for="team1Name">🔴 Equipe Vermelha</label>
+                    <input type="text" id="team1Name" placeholder="Nome da equipe..." value="Equipe Vermelha"
+                        maxlength="20">
+                </div>
+                <div class="form-group">
+                    <label for="team2Name">🟡 Equipe Amarela</label>
+                    <input type="text" id="team2Name" placeholder="Nome da equipe..." value="Equipe Amarela"
+                        maxlength="20">
+                </div>
+                <div class="form-group">
+                    <label for="numEnds">Número de Ends</label>
+                    <div class="ends-selector">
+                        <button class="end-btn" data-ends="4">4</button>
+                        <button class="end-btn" data-ends="6">6</button>
+                        <button class="end-btn active" data-ends="8">8</button>
+                        <button class="end-btn" data-ends="10">10</button>
+                    </div>
+                </div>
+                <button id="startGame" class="btn-start">
+                    <span>Iniciar Partida</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                </button>
+            </div>
+            <div class="lobby-footer">
+                <p>Arraste para mirar • Solte para lançar • 🧹 Esfregue para varrer o gelo</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="gameScreen" class="screen">
+        <div class="game-header">
+            <div class="team-score team1-score">
+                <span class="team-name" id="team1Label">Equipe Vermelha</span>
+                <span class="score" id="score1">0</span>
+            </div>
+            <div class="game-info">
+                <div class="end-info">
+                    <span class="end-label">END</span>
+                    <span class="end-number" id="endNumber">1</span>
+                    <span class="end-total" id="endTotal">/ 8</span>
+                </div>
+                <div class="stones-left">
+                    <span id="stonesInfo">Pedras: 8 / 8</span>
+                </div>
+                <div class="sweep-hint" id="sweepHint">
+                    🧹 Clique e arraste para varrer!
+                </div>
+                <div class="turn-indicator" id="turnIndicator">
+                    <span class="turn-dot"></span>
+                    <span id="turnText">Vez da Equipe Vermelha</span>
+                </div>
+            </div>
+            <div class="team-score team2-score">
+                <span class="team-name" id="team2Label">Equipe Amarela</span>
+                <span class="score" id="score2">0</span>
+            </div>
+        </div>
+
+        <div class="game-area">
+            <canvas id="gameCanvas"></canvas>
+            <div class="power-meter" id="powerMeter">
+                <div class="power-label">FORÇA</div>
+                <div class="power-bar-container">
+                    <div class="power-bar" id="powerBar"></div>
+                </div>
+                <div class="power-value" id="powerValue">0%</div>
+            </div>
+        </div>
+
+        <!-- End Summary Modal -->
+        <div class="modal-overlay" id="endModal">
+            <div class="modal-card">
+                <h2 id="modalTitle">Fim do End 1</h2>
+                <div class="modal-scores">
+                    <div class="modal-team">
+                        <span class="modal-team-name" id="modalTeam1Name">Equipe Vermelha</span>
+                        <span class="modal-team-points" id="modalTeam1Points">+0</span>
+                    </div>
+                    <div class="modal-vs">—</div>
+                    <div class="modal-team">
+                        <span class="modal-team-name" id="modalTeam2Name">Equipe Amarela</span>
+                        <span class="modal-team-points" id="modalTeam2Points">+0</span>
+                    </div>
+                </div>
+                <div class="modal-totals">
+                    <span id="modalTotal1">0</span>
+                    <span>Placar Total</span>
+                    <span id="modalTotal2">0</span>
+                </div>
+                <button class="btn-start" id="nextEndBtn">
+                    <span>Próximo End</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Game Over Modal -->
+        <div class="modal-overlay" id="gameOverModal">
+            <div class="modal-card game-over-card">
+                <div class="trophy">🏆</div>
+                <h2 id="winnerText">Equipe Vermelha Venceu!</h2>
+                <div class="final-score">
+                    <span id="finalScore1">0</span>
+                    <span class="final-vs">×</span>
+                    <span id="finalScore2">0</span>
+                </div>
+                <button class="btn-start" id="backToLobby">
+                    <span>Voltar ao Lobby</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 12H5M12 5l-7 7 7 7" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+
+</html>
