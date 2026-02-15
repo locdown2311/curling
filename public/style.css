@@ -47,6 +47,7 @@ body {
     min-height: 100vh;
     overflow: hidden;
     -webkit-font-smoothing: antialiased;
+    touch-action: none;
 }
 
 /* ===== SCREENS ===== */
@@ -758,58 +759,160 @@ body {
     cursor: crosshair;
 }
 
-/* ===== POWER METER ===== */
-.power-meter {
+/* ===== FORCE PANEL ===== */
+.force-panel {
     position: absolute;
-    right: 30px;
-    top: 50%;
-    transform: translateY(-50%);
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(10, 14, 26, 0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 16px 20px 20px;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 8px;
+    gap: 12px;
+    z-index: 20;
     opacity: 0;
-    transition: opacity 0.3s;
+    transform: translateY(100%);
+    transition: opacity 0.3s ease, transform 0.3s ease;
     pointer-events: none;
 }
 
-.power-meter.visible {
+.force-panel.visible {
     opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
 }
 
-.power-label {
-    font-size: 10px;
+.force-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.force-label {
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: 2px;
     color: #64748b;
 }
 
-.power-bar-container {
-    width: 12px;
-    height: 200px;
-    background: rgba(255, 255, 255, 0.06);
-    border-radius: 6px;
-    overflow: hidden;
+.force-value {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--ice-200);
+    min-width: 60px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.force-slider-track {
     position: relative;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    width: 100%;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    overflow: visible;
+    cursor: pointer;
+    touch-action: none;
+    border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.power-bar {
+.force-slider-fill {
     position: absolute;
-    bottom: 0;
     left: 0;
-    right: 0;
-    height: 0%;
-    border-radius: 6px;
-    background: linear-gradient(to top, #22c55e, #eab308, #ef4444);
-    transition: height 0.05s;
+    top: 0;
+    bottom: 0;
+    width: 50%;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #22c55e, #84cc16, #eab308, #f97316, #ef4444);
+    background-size: 200% 100%;
+    transition: width 0.05s linear;
 }
 
-.power-value {
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--ice-300);
+.force-slider-thumb {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 48px;
+    height: 48px;
+    margin-left: -24px;
+    margin-top: -24px;
+    background: radial-gradient(circle at 40% 35%, #f0f9ff, var(--ice-300));
+    border-radius: 50%;
+    box-shadow:
+        0 0 0 4px rgba(56, 189, 248, 0.3),
+        0 4px 16px rgba(0, 0, 0, 0.4),
+        inset 0 2px 4px rgba(255, 255, 255, 0.4);
+    cursor: grab;
+    touch-action: none;
+    transition: box-shadow 0.2s;
+    z-index: 2;
 }
+
+.force-slider-thumb:active {
+    cursor: grabbing;
+    box-shadow:
+        0 0 0 6px rgba(56, 189, 248, 0.5),
+        0 2px 12px rgba(0, 0, 0, 0.5),
+        inset 0 2px 4px rgba(255, 255, 255, 0.4);
+}
+
+.force-panel-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-cancel-aim {
+    flex: 1;
+    padding: 14px 16px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    border-radius: var(--radius-sm);
+    color: #fca5a5;
+    font-family: var(--font);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    touch-action: manipulation;
+}
+
+.btn-cancel-aim:hover {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+.btn-cancel-aim:active {
+    transform: scale(0.97);
+}
+
+.btn-launch {
+    flex: 2;
+    padding: 14px 24px;
+    background: linear-gradient(135deg, var(--ice-600), var(--ice-500));
+    border: none;
+    border-radius: var(--radius-sm);
+    color: white;
+    font-family: var(--font);
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition);
+    touch-action: manipulation;
+    letter-spacing: 0.5px;
+}
+
+.btn-launch:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(14, 165, 233, 0.35);
+}
+
+.btn-launch:active {
+    transform: scale(0.97);
+}
+
 
 /* ===== MODALS ===== */
 .modal-overlay {
@@ -985,14 +1088,16 @@ body {
         padding: 8px 12px;
     }
 
-    .power-meter {
-        right: 10px;
-    }
+
 
     .modal-card {
         min-width: auto;
         margin: 16px;
         padding: 28px 24px;
+    }
+
+    .hammer-indicator {
+        font-size: 20px;
     }
 
     .room-grid {
@@ -1004,6 +1109,38 @@ body {
     .waiting-card {
         min-width: auto;
         padding: 32px 24px;
+    }
+}
+
+/* Hammer Indicator */
+.hammer-indicator {
+    font-size: 24px;
+    margin: 0 8px;
+    opacity: 0.1;
+    filter: grayscale(100%);
+    transition: all 0.3s ease;
+    cursor: help;
+}
+
+.hammer-indicator.active {
+    opacity: 1;
+    filter: grayscale(0%);
+    transform: scale(1.1);
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+    animation: hammerPulse 2s infinite;
+}
+
+@keyframes hammerPulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.15);
+    }
+
+    100% {
+        transform: scale(1);
     }
 }
 
@@ -1110,4 +1247,66 @@ body {
 .live-score-table .end-scored {
     color: #22c55e !important;
     font-weight: 700;
+}
+
+/* ===== MOBILE IMPROVEMENTS ===== */
+@media (max-width: 768px) {
+    .lobby-card {
+        width: 95vw;
+        max-width: none;
+    }
+
+    .flag-grid {
+        gap: 6px;
+    }
+
+    .flag-btn {
+        font-size: 22px;
+        padding: 6px 2px;
+    }
+
+    .team-score .score {
+        font-size: 28px;
+    }
+
+    .game-info {
+        gap: 2px;
+    }
+
+    .end-number {
+        font-size: 20px;
+    }
+
+    .turn-indicator {
+        padding: 2px 8px;
+        font-size: 10px;
+    }
+
+    /* Make modals fit better */
+    .modal-card {
+        width: 95vw;
+        padding: 24px 16px;
+    }
+
+    .modal-team-points {
+        font-size: 36px;
+    }
+
+    .final-score span:first-child,
+    .final-score span:last-child {
+        font-size: 42px;
+    }
+
+    /* Adjust live score table for mobile */
+    .live-score-table th,
+    .live-score-table td {
+        padding: 2px;
+        min-width: 18px;
+        font-size: 10px;
+    }
+
+    .live-score-table .team-col {
+        min-width: 50px;
+        max-width: 60px;
+    }
 }

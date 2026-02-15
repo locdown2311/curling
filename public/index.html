@@ -112,7 +112,8 @@
     <!-- ===== GAME SCREEN ===== -->
     <div id="gameScreen" class="screen">
         <div class="game-header">
-            <div class="team-score team1-score">
+            <div class="team-score team1-score" id="team1ScoreBox">
+                <div class="hammer-indicator">🔨</div>
                 <span class="team-name" id="team1Label">Equipe Vermelha</span>
                 <span class="score" id="score1">0</span>
             </div>
@@ -137,9 +138,10 @@
                     <span>Conectado</span>
                 </div>
             </div>
-            <div class="team-score team2-score">
+            <div class="team-score team2-score" id="team2ScoreBox">
                 <span class="score" id="score2">0</span>
                 <span class="team-name" id="team2Label">Equipe Amarela</span>
+                <div class="hammer-indicator">🔨</div>
             </div>
         </div>
 
@@ -195,12 +197,20 @@
         <div class="game-area">
             <canvas id="gameCanvas"></canvas>
 
-            <div class="power-meter" id="powerMeter">
-                <span class="power-label">FORÇA</span>
-                <div class="power-bar-container">
-                    <div class="power-bar" id="powerBar"></div>
+            <!-- Force Panel (appears after aim is locked) -->
+            <div class="force-panel" id="forcePanel">
+                <div class="force-panel-header">
+                    <span class="force-label">FORÇA</span>
+                    <span class="force-value" id="forceValue">50%</span>
                 </div>
-                <span class="power-value" id="powerValue">0%</span>
+                <div class="force-slider-track" id="forceSliderTrack">
+                    <div class="force-slider-fill" id="forceSliderFill"></div>
+                    <div class="force-slider-thumb" id="forceSliderThumb"></div>
+                </div>
+                <div class="force-panel-actions">
+                    <button class="btn-cancel-aim" id="btnCancelAim">✕ Cancelar</button>
+                    <button class="btn-launch" id="btnLaunch">🥌 Lançar!</button>
+                </div>
             </div>
         </div>
     </div>

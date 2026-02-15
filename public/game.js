@@ -260,8 +260,13 @@
         resize() {
             const header = document.querySelector('.game-header');
             const headerH = header ? header.offsetHeight : 60;
-            const availW = window.innerWidth - 80;
-            const availH = window.innerHeight - headerH - 20;
+            // Adjust margins for mobile vs desktop
+            const isMobile = window.innerWidth <= 768;
+            const hMargin = isMobile ? 10 : 80;
+            const vMargin = isMobile ? 10 : 20;
+
+            const availW = window.innerWidth - hMargin;
+            const availH = window.innerHeight - headerH - vMargin;
 
             // Scale sheet to fit
             const scaleW = availW / (SHEET.width + CANVAS_PADDING * 2);
@@ -504,10 +509,18 @@
             const tx = this.sx(to.x);
             const ty = this.sy(to.y);
 
-            // Direction line
+            // Glow behind the line for contrast
             ctx.setLineDash([this.ss(6), this.ss(4)]);
-            ctx.strokeStyle = `rgba(255,255,255,${0.3 + power * 0.4})`;
-            ctx.lineWidth = this.ss(2);
+            ctx.strokeStyle = `rgba(255, 140, 0, ${0.4 + power * 0.4})`;
+            ctx.lineWidth = this.ss(5);
+            ctx.beginPath();
+            ctx.moveTo(fx, fy);
+            ctx.lineTo(tx, ty);
+            ctx.stroke();
+
+            // Main direction line (dark)
+            ctx.strokeStyle = `rgba(0, 0, 0, ${0.7 + power * 0.3})`;
+            ctx.lineWidth = this.ss(2.5);
             ctx.beginPath();
             ctx.moveTo(fx, fy);
             ctx.lineTo(tx, ty);
@@ -516,14 +529,14 @@
 
             // Arrow head at target
             const angle = Math.atan2(ty - fy, tx - fx);
-            const arrowLen = this.ss(10);
+            const arrowLen = this.ss(12);
             ctx.beginPath();
             ctx.moveTo(tx, ty);
             ctx.lineTo(tx - arrowLen * Math.cos(angle - 0.4), ty - arrowLen * Math.sin(angle - 0.4));
             ctx.moveTo(tx, ty);
             ctx.lineTo(tx - arrowLen * Math.cos(angle + 0.4), ty - arrowLen * Math.sin(angle + 0.4));
-            ctx.strokeStyle = 'rgba(255,255,255,0.6)';
-            ctx.lineWidth = this.ss(2);
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
+            ctx.lineWidth = this.ss(3);
             ctx.stroke();
         }
 
@@ -882,6 +895,15 @@
             this.waitingRoom = document.getElementById('waitingRoom');
             this.gameScreen = document.getElementById('gameScreen');
 
+            // Force panel elements
+            this.forcePanel = document.getElementById('forcePanel');
+            this.forceSliderTrack = document.getElementById('forceSliderTrack');
+            this.forceSliderFill = document.getElementById('forceSliderFill');
+            this.forceSliderThumb = document.getElementById('forceSliderThumb');
+            this.forceValueEl = document.getElementById('forceValue');
+            this.btnLaunch = document.getElementById('btnLaunch');
+            this.btnCancelAim = document.getElementById('btnCancelAim');
+
             // Game state
             this.team1Name = 'Equipe Vermelha';
             this.team2Name = 'Equipe Amarela';
@@ -900,6 +922,7 @@
             this.dragEnd = null;
             this.aimTarget = null;
             this.power = 0;
+            this.sliderDragging = false;
 
             // Sweeping system
             this.isSweeping = false;
@@ -1198,11 +1221,10 @@
                 if (!this.isDragging || this.state !== 'aiming') return;
                 this.dragEnd = pos;
 
-                // Calculate direction and power
+                // Calculate direction only (no power from drag)
                 const dx = this.dragStart.px - this.dragEnd.px;
                 const dy = this.dragStart.py - this.dragEnd.py;
                 const dragDist = Math.sqrt(dx * dx + dy * dy);
-                this.power = clamp(dragDist / 200, 0, 1);
 
                 // Aim target direction (opposite of drag — natural slingshot feel)
                 const gameStart = this.renderer.toGame(this.dragStart.px, this.dragStart.py);
@@ -1221,10 +1243,8 @@
                     };
                 }
 
-                // Update power meter
-                document.getElementById('powerMeter').classList.add('visible');
-                document.getElementById('powerBar').style.height = `${this.power * 100}%`;
-                document.getElementById('powerValue').textContent = `${Math.round(this.power * 100)}%`;
+                // Show a temporary power preview based on drag for visual feedback
+                this.power = clamp(dragDist / 200, 0, 1);
             };
 
             const onUp = (e) => {
@@ -1237,14 +1257,17 @@
                 if (!this.isDragging || this.state !== 'aiming' || !this.isMyTurn) return;
                 this.isDragging = false;
 
-                if (this.power > 0.05 && this.aimTarget) {
-                    this.launchStone();
+                // If a valid aim direction was set, transition to aim_locked
+                if (this.aimTarget) {
+                    this.state = 'aim_locked';
+                    // Set default power to 50% for the slider
+                    this.power = 0.5;
+                    this.updateForceSlider(this.power);
+                    this.forcePanel.classList.add('visible');
+                } else {
+                    this.aimTarget = null;
+                    this.power = 0;
                 }
-
-                document.getElementById('powerMeter').classList.remove('visible');
-                document.getElementById('sweepHint').classList.remove('visible');
-                this.aimTarget = null;
-                this.power = 0;
             };
 
             canvas.addEventListener('mousedown', onDown);
@@ -1254,7 +1277,7 @@
                 if (this.isSweeping) {
                     this.isSweeping = false;
                     this.canvas.style.cursor = 'crosshair';
-                } else {
+                } else if (this.state === 'aiming') {
                     onUp(e);
                 }
             });
@@ -1263,11 +1286,76 @@
             canvas.addEventListener('touchmove', onMove, { passive: false });
             canvas.addEventListener('touchend', onUp);
 
+            // --- Force Slider Interaction ---
+            const getSliderRatio = (e) => {
+                const rect = this.forceSliderTrack.getBoundingClientRect();
+                const touch = e.touches && e.touches.length > 0 ? e.touches[0] : (e.changedTouches && e.changedTouches.length > 0 ? e.changedTouches[0] : null);
+                const clientX = touch ? touch.clientX : e.clientX;
+                return clamp((clientX - rect.left) / rect.width, 0, 1);
+            };
+
+            const onSliderDown = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.sliderDragging = true;
+                const ratio = getSliderRatio(e);
+                this.power = ratio;
+                this.updateForceSlider(ratio);
+            };
+
+            const onSliderMove = (e) => {
+                if (!this.sliderDragging) return;
+                e.preventDefault();
+                e.stopPropagation();
+                const ratio = getSliderRatio(e);
+                this.power = ratio;
+                this.updateForceSlider(ratio);
+            };
+
+            const onSliderUp = (e) => {
+                if (!this.sliderDragging) return;
+                this.sliderDragging = false;
+            };
+
+            this.forceSliderTrack.addEventListener('mousedown', onSliderDown);
+            this.forceSliderThumb.addEventListener('mousedown', onSliderDown);
+            document.addEventListener('mousemove', onSliderMove);
+            document.addEventListener('mouseup', onSliderUp);
+
+            this.forceSliderTrack.addEventListener('touchstart', onSliderDown, { passive: false });
+            this.forceSliderThumb.addEventListener('touchstart', onSliderDown, { passive: false });
+            document.addEventListener('touchmove', onSliderMove, { passive: false });
+            document.addEventListener('touchend', onSliderUp);
+
+            // --- Launch Button ---
+            this.btnLaunch.addEventListener('click', () => {
+                if (this.state !== 'aim_locked') return;
+                if (this.power < 0.03) this.power = 0.03; // minimum force
+                this.forcePanel.classList.remove('visible');
+                this.launchStone();
+            });
+
+            // --- Cancel Button ---
+            this.btnCancelAim.addEventListener('click', () => {
+                if (this.state !== 'aim_locked') return;
+                this.forcePanel.classList.remove('visible');
+                this.state = 'aiming';
+                this.aimTarget = null;
+                this.power = 0;
+            });
+
             window.addEventListener('resize', () => {
                 if (this.state !== 'lobby') {
                     this.renderer.resize();
                 }
             });
+        }
+
+        updateForceSlider(ratio) {
+            const pct = Math.round(ratio * 100);
+            this.forceSliderFill.style.width = `${pct}%`;
+            this.forceSliderThumb.style.left = `${pct}%`;
+            this.forceValueEl.textContent = `${pct}%`;
         }
 
         launchStone() {
@@ -1443,8 +1531,17 @@
                 turnText.textContent = `Vez: ${currentName}`;
             }
 
-            const hammerTeam = this.hammer === 0 ? this.team1Name : this.team2Name;
-            document.getElementById('turnIndicator').title = `Hammer: ${hammerTeam}`;
+            // Hammer indicator update
+            const t1Hammer = document.querySelector('#team1ScoreBox .hammer-indicator');
+            const t2Hammer = document.querySelector('#team2ScoreBox .hammer-indicator');
+
+            if (this.hammer === 0) {
+                t1Hammer.classList.add('active');
+                t2Hammer.classList.remove('active');
+            } else {
+                t1Hammer.classList.remove('active');
+                t2Hammer.classList.add('active');
+            }
         }
 
         updateLiveScoreTable() {
@@ -1502,21 +1599,20 @@
         }
 
         update() {
-            // Aim timer — auto-skip if time runs out
-            if (this.state === 'aiming') {
+            // Aim timer — auto-skip if time runs out (only active player triggers timeout)
+            if ((this.state === 'aiming' || this.state === 'aim_locked') && this.isMyTurn) {
                 const elapsed = Date.now() - this.aimStartTime;
-                // Active player times out at AIM_TIME_LIMIT; non-active player uses grace period
-                const timeLimit = this.isMyTurn ? AIM_TIME_LIMIT : AIM_TIME_LIMIT + 2000;
-                if (elapsed >= timeLimit) {
-                    if (this.isMyTurn) {
-                        // Notify opponent about timeout
-                        this.net.sendAction({ type: 'timeout', team: this.currentTeam });
-                    }
+                // Extend time limit if aim is locked (user is adjusting force)
+                const limit = (this.state === 'aim_locked') ? 35000 : AIM_TIME_LIMIT;
+
+                if (elapsed >= limit) {
+                    // Notify opponent about timeout
+                    this.net.sendAction({ type: 'timeout', team: this.currentTeam });
                     this.stonesThrown[this.currentTeam]++;
                     this.isDragging = false;
                     this.aimTarget = null;
                     this.power = 0;
-                    document.getElementById('powerMeter').classList.remove('visible');
+                    this.forcePanel.classList.remove('visible');
                     this.nextTurn();
                     return;
                 }
@@ -1678,10 +1774,10 @@
             }
 
             // Draw aiming UI with wobble
-            if (this.state === 'aiming') {
+            if (this.state === 'aiming' || this.state === 'aim_locked') {
                 r.drawNextStonePreview(this.launchPos.x, this.launchPos.y, this.currentTeam);
 
-                if (this.isDragging && this.aimTarget && this.power > 0.05) {
+                if (this.aimTarget && (this.isDragging || this.state === 'aim_locked')) {
                     // Apply visual wobble to aim line
                     const dx = this.aimTarget.x - this.launchPos.x;
                     const dy = this.aimTarget.y - this.launchPos.y;
@@ -1697,7 +1793,8 @@
 
                 // Draw aim timer bar (on canvas bottom)
                 const elapsed = Date.now() - this.aimStartTime;
-                const remaining = Math.max(0, 1 - elapsed / AIM_TIME_LIMIT);
+                const limit = (this.state === 'aim_locked') ? 35000 : AIM_TIME_LIMIT;
+                const remaining = Math.max(0, 1 - elapsed / limit);
                 const barW = r.ss(SHEET.width);
                 const barH = r.ss(4);
                 const barX = r.sx(0);
